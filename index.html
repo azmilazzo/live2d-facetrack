@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live2D with Face Tracking</title>
+
+    <!-- Include necessary scripts -->
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/dist/WebARRocksFace.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceDebugHelper.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksResizer.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceExpressionsEvaluator.js"></script>
+    <script src="https://unpkg.com/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #2a2a2a; }
+        canvas { position: absolute; }
+    </style>
+</head>
+<body>
+    <canvas id="WebARRocksFaceCanvas" width="600" height="600"></canvas>
+    <script src="main.js"></script>
+</body>
+</html>
