@@ -24,16 +24,20 @@ function initLive2D() {
   L2Dwidget.on('modelReady', function() {
     const live2dModel = L2Dwidget.getModel();
 
-    WebARRocksFaceExpressionsEvaluator.add_trigger('OPEN_MOUTH', {
-      threshold: 0.4,
+    WebARRocksFaceExpressionsEvaluator.add_trigger('FACE_TRACKING', {
+      threshold: 0.1,
       hysteresis: 0.05,
       onStart: function() {
-        console.log('MOUTH OPEN START');
-        live2dModel.motionManager.startMotion('motion', 0, 2);
+        console.log('FACE TRACKING START');
       },
       onEnd: function() {
-        console.log('MOUTH OPEN END');
-        live2dModel.motionManager.stopAllMotions();
+        console.log('FACE TRACKING END');
+      },
+      onUpdate: function(detectState) {
+        const faceX = detectState.x; // Get face position
+        const faceY = detectState.y;
+        live2dModel.setParamFloat('PARAM_ANGLE_X', faceX * 30); // Update parameters
+        live2dModel.setParamFloat('PARAM_ANGLE_Y', faceY * 30);
       }
     });
   });
@@ -64,8 +68,10 @@ function start() {
       initVideo();
     },
     callbackTrack: function(detectState) {
-      const expressionsValues = WebARRocksFaceExpressionsEvaluator.evaluate_expressions(detectState);
-      WebARRocksFaceExpressionsEvaluator.run_triggers(expressionsValues);
+      const faceX = detectState.expressions['FACE_TRACKING'];
+      const faceY = detectState.expressions['FACE_TRACKING'];
+      L2Dwidget.getModel().setParamFloat('PARAM_ANGLE_X', faceX * 30);
+      L2Dwidget.getModel().setParamFloat('PARAM_ANGLE_Y', faceY * 30);
     }
   });
 }
