@@ -12,12 +12,14 @@
     <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceExpressionsEvaluator.js"></script>
     <script src="https://unpkg.com/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
     <style>
-        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #2a2a2a; }
+        body { margin: 0; background: #2a2a2a; overflow: hidden; }
         canvas { position: absolute; }
+        #video { position: absolute; top: 10px; left: 10px; width: 160px; height: 120px; border: 2px solid #fff; z-index: 1000; }
     </style>
 </head>
 <body>
-    <canvas id="WebARRocksFaceCanvas" width="600" height="600"></canvas>
+    <canvas id="WebARRocksFaceCanvas"></canvas>
+    <video id="video" autoplay muted playsinline></video>
     <script src="main.js"></script>
 </body>
 </html>
