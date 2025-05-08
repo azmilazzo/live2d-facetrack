@@ -9,6 +9,23 @@ function initLive2D() {
       height: 300,
     }
   });
+
+  L2Dwidget.on('modelReady', function() {
+    const live2dModel = L2Dwidget.getModel();
+    
+    WebARRocksFaceExpressionsEvaluator.add_trigger('OPEN_MOUTH', {
+      threshold: 0.4,
+      hysteresis: 0.05,
+      onStart: function() {
+        console.log('MOUTH OPEN START');
+        live2dModel.motionManager.startMotion('motion', 0, 2); // Example motion
+      },
+      onEnd: function() {
+        console.log('MOUTH OPEN END');
+        live2dModel.motionManager.stopAllMotions();
+      }
+    });
+  });
 }
 
 function initVideo() {
@@ -20,31 +37,6 @@ function initVideo() {
     .catch((err) => {
       console.error("Error accessing webcam: " + err);
     });
-}
-
-function init_evaluators() {
-  WebARRocksFaceExpressionsEvaluator.add_expressionEvaluator('OPEN_MOUTH', {
-    refLandmarks: ["lowerLipBot", "chin"],
-    landmarks: ["lowerLipBot", "upperLipTop"],
-    range: [0.7, 1.2],
-    isInv: false,
-    isDebug: true
-  });
-}
-
-function init_triggers() {
-  WebARRocksFaceExpressionsEvaluator.add_trigger('OPEN_MOUTH', {
-    threshold: 0.4,
-    hysteresis: 0.05,
-    onStart: function() {
-      console.log('MOUTH OPEN START');
-      L2Dwidget.getModel().setParamFloat("PARAM_MOUTH_OPEN_Y", 1.0);
-    },
-    onEnd: function() {
-      console.log('MOUTH OPEN END');
-      L2Dwidget.getModel().setParamFloat("PARAM_MOUTH_OPEN_Y", 0.0);
-    }
-  });
 }
 
 function start() {
@@ -59,8 +51,6 @@ function start() {
       }
       initLive2D();
       initVideo();
-      init_evaluators();
-      init_triggers();
     },
     callbackTrack: function(detectState) {
       const expressionsValues = WebARRocksFaceExpressionsEvaluator.evaluate_expressions(detectState);
