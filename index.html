@@ -14,7 +14,10 @@
     <style>
         body { margin: 0; background: #2a2a2a; overflow: hidden; }
         canvas { position: absolute; }
-        #video { display: none; }
+        #video {
+          display: none; /* Hide the video as it's used for tracking */
+          transform: scaleX(-1); /* Mirror the video */
+        }
     </style>
 </head>
 <body>
