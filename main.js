@@ -4,21 +4,32 @@ function initLive2D() {
       jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
     },
     display: {
-      position: 'right',
-      width: 150,
-      height: 300,
+      position: 'center',
+      width: window.innerWidth,
+      height: window.innerHeight,
+      hOffset: 0,
+      vOffset: 0,
+    },
+    mobile: {
+      show: true,
+      scale: 1,
+      motion: true
+    },
+    react: {
+      opacityDefault: 1,
+      opacityOnHover: 1
     }
   });
 
   L2Dwidget.on('modelReady', function() {
     const live2dModel = L2Dwidget.getModel();
-    
+
     WebARRocksFaceExpressionsEvaluator.add_trigger('OPEN_MOUTH', {
       threshold: 0.4,
       hysteresis: 0.05,
       onStart: function() {
         console.log('MOUTH OPEN START');
-        live2dModel.motionManager.startMotion('motion', 0, 2); // Example motion
+        live2dModel.motionManager.startMotion('motion', 0, 2);
       },
       onEnd: function() {
         console.log('MOUTH OPEN END');
