@@ -11,6 +11,17 @@ function initLive2D() {
   });
 }
 
+function initVideo() {
+  const video = document.getElementById('video');
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then((stream) => {
+      video.srcObject = stream;
+    })
+    .catch((err) => {
+      console.error("Error accessing webcam: " + err);
+    });
+}
+
 function init_evaluators() {
   WebARRocksFaceExpressionsEvaluator.add_expressionEvaluator('OPEN_MOUTH', {
     refLandmarks: ["lowerLipBot", "chin"],
@@ -47,6 +58,7 @@ function start() {
         return;
       }
       initLive2D();
+      initVideo();
       init_evaluators();
       init_triggers();
     },
