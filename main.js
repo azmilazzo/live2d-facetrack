@@ -1,3 +1,8 @@
+// Smoothing variables
+let smoothedX = 0;
+let smoothedY = 0;
+const smoothingFactor = 0.4; // Adjust between 0.1 (very smooth) to 0.8 (responsive)
+
 function initLive2D() {
   L2Dwidget.init({
     model: {
@@ -18,7 +23,7 @@ function initLive2D() {
     react: {
       opacityDefault: 1,
       opacityOnHover: 1,
-      mouse: true // Explicit mouse tracking enabled
+      mouse: true
     }
   });
 }
@@ -105,93 +110,77 @@ function start() {
       initLive2D();
       initVideo();
     },
-// ... (Keep all previous code until the callbackTrack function)
+    callbackTrack: function(detectState) {
+      try {
+        const video = document.getElementById('video');
+        if (!video.videoWidth || !video.videoHeight) return;
 
-callbackTrack: function(detectState) {
-  try {
-    // Added video dimension validation
-    const video = document.getElementById('video');
-    if (!video.videoWidth || !video.videoHeight) {
-      console.warn('Video dimensions not ready yet');
-      return;
-    }
-
-    // Dynamic confidence threshold
-    const confidenceThreshold = 0.4; // Lowered further if needed
-    if (detectState.detected < confidenceThreshold) {
-      textIndicator.innerHTML = 'Face tracking: No face detected';
-      textIndicator.style.color = 'orange';
-      indicator.style.display = 'none';
-      debugPoints.innerHTML = '';
-      return;
-    }
-
-    textIndicator.innerHTML = 'Face tracking: Active';
-    textIndicator.style.color = 'lime';
-
-    if (detectState.landmarks) {
-      debugPoints.innerHTML = '';
-      let noseLandmark = null;
-
-      // Debug: Log all landmarks
-      console.log('Landmarks:', detectState.landmarks);
-
-      // Try alternative nose indices
-      const NOSE_INDICES = [30, 1, 5, 34]; // Common nose tip indices
-      
-      for (let i = 0; i < detectState.landmarks.length; i++) {
-        const point = detectState.landmarks[i];
-        const mirroredX = video.videoWidth - point[0];
-
-        // Create debug points
-        const debugPoint = document.createElement('div');
-        debugPoint.style.position = 'absolute';
-        debugPoint.style.width = '5px';
-        debugPoint.style.height = '5px';
-        debugPoint.style.backgroundColor = NOSE_INDICES.includes(i) ? 'green' : 'blue';
-        debugPoint.style.borderRadius = '50%';
-        debugPoint.style.zIndex = '999';
-        debugPoint.style.left = mirroredX + 'px';
-        debugPoint.style.top = point[1] + 'px';
-        debugPoint.style.transform = 'translate(-50%, -50%)';
-        debugPoint.title = `Landmark ${i}`;
-        debugPoints.appendChild(debugPoint);
-
-        // Find first matching nose index
-        if (NOSE_INDICES.includes(i) && !noseLandmark) {
-          noseLandmark = [mirroredX, point[1]];
+        // Dynamic confidence threshold
+        const confidenceThreshold = 0.4;
+        if (detectState.detected < confidenceThreshold) {
+          textIndicator.innerHTML = 'Face tracking: No face detected';
+          textIndicator.style.color = 'orange';
+          indicator.style.display = 'none';
+          debugPoints.innerHTML = '';
+          smoothedX = smoothedY = 0; // Reset smoothing
+          return;
         }
-      }
 
-      if (noseLandmark) {
-        // Add dimension validation
-        const validDimensions = video.videoWidth > 0 && video.videoHeight > 0;
-        const screenX = validDimensions 
-          ? (noseLandmark[0] / video.videoWidth) * window.innerWidth
-          : noseLandmark[0];
-        
-        const screenY = validDimensions
-          ? (noseLandmark[1] / video.videoHeight) * window.innerHeight
-          : noseLandmark[1];
+        textIndicator.innerHTML = 'Face tracking: Active';
+        textIndicator.style.color = 'lime';
 
-        console.log('Raw coordinates:', noseLandmark, 'Screen:', screenX, screenY);
+        if (detectState.landmarks) {
+          debugPoints.innerHTML = '';
+          let noseLandmark = null;
+          const NOSE_INDICES = [30, 1, 5, 34];
 
-        indicator.style.display = 'block';
-        indicator.style.left = screenX + 'px';
-        indicator.style.top = screenY + 'px';
-        
-        textIndicator.innerHTML = `Face tracking: Active (Nose X: ${screenX.toFixed(0)}, Y: ${screenY.toFixed(0)})`;
-        simulateMouseMove(screenX, screenY);
+          for (let i = 0; i < detectState.landmarks.length; i++) {
+            const point = detectState.landmarks[i];
+            const mirroredX = video.videoWidth - point[0];
+
+            // Debug points
+            const debugPoint = document.createElement('div');
+            debugPoint.style.position = 'absolute';
+            debugPoint.style.width = '5px';
+            debugPoint.style.height = '5px';
+            debugPoint.style.backgroundColor = NOSE_INDICES.includes(i) ? 'green' : 'blue';
+            debugPoint.style.borderRadius = '50%';
+            debugPoint.style.zIndex = '999';
+            debugPoint.style.left = mirroredX + 'px';
+            debugPoint.style.top = point[1] + 'px';
+            debugPoint.style.transform = 'translate(-50%, -50%)';
+            debugPoint.title = `Landmark ${i}`;
+            debugPoints.appendChild(debugPoint);
+
+            if (NOSE_INDICES.includes(i) && !noseLandmark) {
+              noseLandmark = [mirroredX, point[1]];
+            }
+          }
+
+          if (noseLandmark) {
+            // Convert to screen coordinates with validation
+            const screenX = (noseLandmark[0] / video.videoWidth) * window.innerWidth;
+            const screenY = (noseLandmark[1] / video.videoHeight) * window.innerHeight;
+
+            // Apply smoothing
+            smoothedX = smoothingFactor * screenX + (1 - smoothingFactor) * smoothedX;
+            smoothedY = smoothingFactor * screenY + (1 - smoothingFactor) * smoothedY;
+
+            // Update display
+            indicator.style.display = 'block';
+            indicator.style.left = smoothedX + 'px';
+            indicator.style.top = smoothedY + 'px';
+            
+            textIndicator.innerHTML = `Face tracking: Active (Nose X: ${smoothedX.toFixed(0)}, Y: ${smoothedY.toFixed(0)})`;
+            simulateMouseMove(smoothedX, smoothedY);
+          }
+        }
+      } catch (error) {
+        console.error("Error in tracking callback:", error);
+        textIndicator.innerHTML = `Error: ${error.message}`;
+        textIndicator.style.color = 'red';
       }
     }
-  } catch (error) {
-    console.error("Error in tracking callback:", error);
-    textIndicator.innerHTML = `Error: ${error.message}`;
-    textIndicator.style.color = 'red';
-  }
-}
-
-// ... (Rest of the code remains the same)
   });
 }
 
