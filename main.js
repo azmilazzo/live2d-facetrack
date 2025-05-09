@@ -34,18 +34,15 @@ function initVideo() {
 }
 
 function start() {
-  WebARRocksFace.init({
-    canvasId: 'WebARRocksFaceCanvas',
-    NNCPath: 'https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/neuralNets/NN_AUTOBONES_21.json',
-    videoSettings: {
-      facingMode: 'user'
+  WebARRocksFaceDebugHelper.init({
+    spec: {
+      NNCPath: 'https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/neuralNets/NN_AUTOBONES_21.json'
     },
     callbackReady: function(err, spec) {
       if (err) {
         console.error('An error occurred:', err);
         return;
       }
-      console.log('WebAR.rocks.face is ready!');
       initLive2D();
       initVideo();
     },
@@ -59,7 +56,6 @@ function start() {
         const nose = detectState.landmarks[30];
         
         // Calculate normalized position (-1 to 1)
-        // Assuming the coordinates are in screen space (0 to width/height)
         const canvasWidth = document.getElementById('WebARRocksFaceCanvas').width;
         const canvasHeight = document.getElementById('WebARRocksFaceCanvas').height;
         
@@ -69,15 +65,15 @@ function start() {
         const noseY = 2 * (nose[1] / canvasHeight) - 1;
         
         // Apply to Live2D model with appropriate scaling
-        // When user looks left (negative noseX), character should look left (positive angle)
-        if (L2Dwidget.getModel()) {
+        const model = L2Dwidget.getModel();
+        if (model) {
           // Adjust the multiplier (30) to control sensitivity
-          L2Dwidget.getModel().setParamFloat('PARAM_ANGLE_X', noseX * 30);
-          L2Dwidget.getModel().setParamFloat('PARAM_ANGLE_Y', noseY * 30);
+          model.setParamFloat('PARAM_ANGLE_X', noseX * 30);
+          model.setParamFloat('PARAM_ANGLE_Y', noseY * 30);
           
           // Optional: Add some eye tracking as well
-          L2Dwidget.getModel().setParamFloat('PARAM_EYE_BALL_X', noseX);
-          L2Dwidget.getModel().setParamFloat('PARAM_EYE_BALL_Y', noseY);
+          model.setParamFloat('PARAM_EYE_BALL_X', noseX);
+          model.setParamFloat('PARAM_EYE_BALL_Y', noseY);
         }
       }
     }
