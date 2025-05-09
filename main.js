@@ -94,39 +94,36 @@ function start() {
       initVideo();
     },
     callbackTrack: function(detectState) {
-      if (!detectState.detected) {
-        textIndicator.innerHTML = 'Face tracking: No face detected';
-        textIndicator.style.color = 'orange';
-        indicator.style.display = 'none';
-        return;
-      }
-      
-      textIndicator.innerHTML = 'Face tracking: Active';
-      textIndicator.style.color = 'lime';
-      
-      // Get nose position (point 30 in the landmarks)
-      if (detectState.landmarks && detectState.landmarks.length > 30) {
-        const nose = detectState.landmarks[30];
+      try {
+        if (!detectState.detected) {
+          textIndicator.innerHTML = 'Face tracking: No face detected';
+          textIndicator.style.color = 'orange';
+          indicator.style.display = 'none';
+          return;
+        }
         
-        // Update the visual indicator position
-        indicator.style.display = 'block';
-        indicator.style.left = nose[0] + 'px';
-        indicator.style.top = nose[1] + 'px';
+        textIndicator.innerHTML = 'Face tracking: Active';
+        textIndicator.style.color = 'lime';
         
-        // Calculate normalized position (-1 to 1)
-        const canvasWidth = document.getElementById('WebARRocksFaceCanvas').width;
-        const canvasHeight = document.getElementById('WebARRocksFaceCanvas').height;
-        
-        // Calculate actual screen coordinates
-        const screenX = nose[0];
-        const screenY = nose[1];
-        
-        // Show coordinates in the text indicator
-        textIndicator.innerHTML = `Face tracking: Active (X: ${screenX.toFixed(0)}, Y: ${screenY.toFixed(0)})`;
-        
-        // Instead of directly modifying Live2D parameters, simulate mouse movement
-        // This works because Live2D widget responds to mouse movements by default
-        simulateMouseMove(screenX, screenY);
+        // Get nose position (point 30 in the landmarks)
+        if (detectState.landmarks && detectState.landmarks.length > 30) {
+          const nose = detectState.landmarks[30];
+          
+          // Update the visual indicator position
+          indicator.style.display = 'block';
+          indicator.style.left = nose[0] + 'px';
+          indicator.style.top = nose[1] + 'px';
+          
+          // Show coordinates in the text indicator
+          textIndicator.innerHTML = `Face tracking: Active (X: ${nose[0].toFixed(0)}, Y: ${nose[1].toFixed(0)})`;
+          
+          // Simulate mouse movement at the nose position
+          simulateMouseMove(nose[0], nose[1]);
+        }
+      } catch (error) {
+        console.error("Error in tracking callback:", error);
+        textIndicator.innerHTML = `Error: ${error.message}`;
+        textIndicator.style.color = 'red';
       }
     }
   });
