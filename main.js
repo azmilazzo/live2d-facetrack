@@ -2,75 +2,101 @@
 let smoothedX = 0;
 let smoothedY = 0;
 const smoothingFactor = 0.4;
-let lastDebugTime = 0;
+let cameraWorking = false;
 
-// ... (Keep initLive2D, initVideo, createIndicator, simulateMouseMove functions unchanged)
+function initLive2D() {
+  // ... keep previous initLive2D implementation ...
+}
+
+function initVideo() {
+  console.log('[Camera] Starting camera initialization...');
+  const video = document.getElementById('video');
+  
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then((stream) => {
+      console.log('[Camera] Got media stream:', stream);
+      video.srcObject = stream;
+      
+      // Add event listeners for video metadata
+      video.addEventListener('loadedmetadata', () => {
+        console.log('[Camera] Video metadata loaded:');
+        console.log('Dimensions:', video.videoWidth, 'x', video.videoHeight);
+        console.log('ReadyState:', video.readyState);
+        console.log('Source:', video.srcObject);
+        cameraWorking = true;
+      });
+      
+      video.addEventListener('error', (err) => {
+        console.error('[Camera] Video error:', err);
+        cameraWorking = false;
+      });
+    })
+    .catch((err) => {
+      console.error('[Camera] Access error:', err.name, err.message);
+      cameraWorking = false;
+    });
+}
+
+// ... keep createIndicator, simulateMouseMove functions ...
 
 function start() {
   const { indicator, textIndicator, debugPoints } = createIndicator();
   const video = document.getElementById('video');
   
-  console.log("Starting face tracking...");
+  console.log("[System] Starting face tracking...");
   
   WebARRocksFaceDebugHelper.init({
     spec: {
       NNCPath: 'https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/neuralNets/NN_AUTOBONES_21.json',
-      videoSettings: {
-        facingMode: 'user'
-      }
+      videoSettings: { facingMode: 'user' }
     },
     callbackReady: function(err, spec) {
-      // ... (unchanged ready callback)
+      // ... keep previous ready callback ...
     },
     callbackTrack: function(detectState) {
       try {
-        const now = Date.now();
-        const video = document.getElementById('video');
-
-        // 1. Log video dimensions
-        if (now - lastDebugTime > 1000) { // Throttle logs
-          console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-          console.log('Window dimensions:', window.innerWidth, 'x', window.innerHeight);
-          lastDebugTime = now;
-        }
-
-        // 2. Log full detection state
-        console.log('Detection state:', {
-          detected: detectState.detected,
-          isDetected: detectState.isDetected,
-          landmarksCount: detectState.landmarks?.length || 0,
-          hasNose: !!detectState.expressions?.nose
-        });
-
-        // 3. Confidence checks
-        const confidenceThreshold = 0.3;
-        if (detectState.detected < confidenceThreshold) {
-          console.warn('Low confidence:', detectState.detected);
-          // ... (rest of confidence handling)
-          return;
-        }
-
-        // 4. Landmark processing
+        console.group('[Frame] Tracking Update');
+        
+        // 1. Camera diagnostics
+        console.log('[Camera] Working:', cameraWorking);
+        console.log('[Camera] Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+        console.log('[Camera] Ready state:', video.readyState);
+        
+        // 2. Detection state analysis
+        console.log('[Detection] Confidence:', detectState.detected);
+        console.log('[Detection] Is detected:', detectState.isDetected);
+        console.log('[Detection] Landmarks count:', detectState.landmarks?.length || 0);
+        
+        // 3. Raw landmark dump
         if (detectState.landmarks) {
-          console.log('First 5 landmarks:', detectState.landmarks.slice(0, 5));
+          console.log('[Landmarks] Full array:', detectState.landmarks);
+          console.log('[Landmarks] First 10 points:', 
+            detectState.landmarks.slice(0, 10).map(p => `${p[0]},${p[1]}`));
+        }
+        
+        // 4. Coordinate processing
+        if (detectState.landmarks?.length > 0) {
+          const testIndex = 30; // Try different indices here
+          const rawX = detectState.landmarks[testIndex][0];
+          const rawY = detectState.landmarks[testIndex][1];
+          console.log('[Coordinates] Raw (index 30):', rawX, rawY);
           
-          // ... (rest of landmark processing)
-
-          if (noseLandmark) {
-            // 5. Raw coordinate logging
-            console.log('Raw nose coordinates:', noseLandmark);
+          if (video.videoWidth > 0) {
+            const mirroredX = video.videoWidth - rawX;
+            console.log('[Coordinates] Mirrored:', mirroredX, rawY);
             
-            // ... (coordinate conversion and smoothing)
-
-            // 6. Final coordinates
-            console.log('Smoothed coordinates:', smoothedX, smoothedY);
+            const screenX = (mirroredX / video.videoWidth) * window.innerWidth;
+            const screenY = (rawY / video.videoHeight) * window.innerHeight;
+            console.log('[Coordinates] Converted:', screenX, screenY);
           }
         }
+        
+        console.groupEnd();
       } catch (error) {
-        // ... (error handling)
+        console.error('[Error] Tracking callback:', error);
       }
     }
   });
 }
 
-// ... (Keep main function and event listener)
+// ... keep main function and event listener ...
