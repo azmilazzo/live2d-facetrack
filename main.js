@@ -1,5 +1,4 @@
 function initLive2D() {
-  // Initialize Live2D widget
   L2Dwidget.init({
     model: {
       jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
@@ -18,7 +17,8 @@ function initLive2D() {
     },
     react: {
       opacityDefault: 1,
-      opacityOnHover: 1
+      opacityOnHover: 1,
+      mouse: true // Explicit mouse tracking enabled
     }
   });
 }
@@ -35,7 +35,6 @@ function initVideo() {
     });
 }
 
-// Create a visual indicator
 function createIndicator() {
   const indicator = document.createElement('div');
   indicator.id = 'noseIndicator';
@@ -45,11 +44,10 @@ function createIndicator() {
   indicator.style.backgroundColor = 'red';
   indicator.style.borderRadius = '50%';
   indicator.style.zIndex = '1000';
-  indicator.style.pointerEvents = 'none'; // Make sure it doesn't interfere with clicks
-  indicator.style.transform = 'translate(-50%, -50%)'; // Center the dot on the actual point
+  indicator.style.pointerEvents = 'none';
+  indicator.style.transform = 'translate(-50%, -50%)';
   document.body.appendChild(indicator);
   
-  // Create text indicator
   const textIndicator = document.createElement('div');
   textIndicator.id = 'trackingStatus';
   textIndicator.style.position = 'absolute';
@@ -63,7 +61,6 @@ function createIndicator() {
   textIndicator.innerHTML = 'Face tracking: Waiting...';
   document.body.appendChild(textIndicator);
   
-  // Add debug points to see all landmarks
   const debugPoints = document.createElement('div');
   debugPoints.id = 'debugPoints';
   document.body.appendChild(debugPoints);
@@ -71,7 +68,6 @@ function createIndicator() {
   return { indicator, textIndicator, debugPoints };
 }
 
-// Function to dispatch a mousemove event
 function simulateMouseMove(x, y) {
   const event = new MouseEvent('mousemove', {
     view: window,
@@ -85,6 +81,7 @@ function simulateMouseMove(x, y) {
 
 function start() {
   const { indicator, textIndicator, debugPoints } = createIndicator();
+  const video = document.getElementById('video');
   
   console.log("Starting face tracking...");
   
@@ -110,7 +107,8 @@ function start() {
     },
     callbackTrack: function(detectState) {
       try {
-        if (!detectState.detected) {
+        // Adjusted detection threshold
+        if (detectState.detected < 0.5) {
           textIndicator.innerHTML = 'Face tracking: No face detected';
           textIndicator.style.color = 'orange';
           indicator.style.display = 'none';
@@ -121,62 +119,46 @@ function start() {
         textIndicator.innerHTML = 'Face tracking: Active';
         textIndicator.style.color = 'lime';
         
-        // Log the detectState structure to understand its format
-        console.log("Detection state:", detectState);
-        
-        // Show all landmarks as debug points
         if (detectState.landmarks) {
           debugPoints.innerHTML = '';
-          
-          // Find the nose tip landmark
-          // The nose tip is typically around index 30 in many face tracking systems
-          // But let's first check what landmarks we actually have
-          console.log("Number of landmarks:", detectState.landmarks.length);
-          
-          // Let's try the first few landmarks to find one that works
           let noseLandmark = null;
           
-          // Try different potential nose landmark indices
-          for (let i = 27; i <= 33; i++) {
-            if (i < detectState.landmarks.length) {
-              const point = detectState.landmarks[i];
-              
-              // Create a small debug point for each landmark
-              const debugPoint = document.createElement('div');
-              debugPoint.style.position = 'absolute';
-              debugPoint.style.width = '5px';
-              debugPoint.style.height = '5px';
-              debugPoint.style.backgroundColor = (i === 30) ? 'green' : 'blue';
-              debugPoint.style.borderRadius = '50%';
-              debugPoint.style.zIndex = '999';
-              debugPoint.style.left = point[0] + 'px';
-              debugPoint.style.top = point[1] + 'px';
-              debugPoint.style.transform = 'translate(-50%, -50%)';
-              debugPoint.title = `Landmark ${i}`;
-              debugPoints.appendChild(debugPoint);
-              
-              // Use landmark 30 as the nose by convention
-              if (i === 30) {
-                noseLandmark = point;
-              }
+          // Check all landmarks for debugging
+          for (let i = 0; i < detectState.landmarks.length; i++) {
+            const point = detectState.landmarks[i];
+            const mirroredX = video.videoWidth - point[0]; // Mirror X coordinate
+            
+            // Create debug point
+            const debugPoint = document.createElement('div');
+            debugPoint.style.position = 'absolute';
+            debugPoint.style.width = '5px';
+            debugPoint.style.height = '5px';
+            debugPoint.style.backgroundColor = (i === 30) ? 'green' : 'blue';
+            debugPoint.style.borderRadius = '50%';
+            debugPoint.style.zIndex = '999';
+            debugPoint.style.left = mirroredX + 'px';
+            debugPoint.style.top = point[1] + 'px';
+            debugPoint.style.transform = 'translate(-50%, -50%)';
+            debugPoint.title = `Landmark ${i}`;
+            debugPoints.appendChild(debugPoint);
+            
+            // Use landmark 30 as nose (adjust if needed)
+            if (i === 30) {
+              noseLandmark = [mirroredX, point[1]];
             }
           }
           
-          // If we found the nose, use it
           if (noseLandmark) {
-            // Update the visual indicator position
+            // Convert to screen coordinates
+            const screenX = (noseLandmark[0] / video.videoWidth) * window.innerWidth;
+            const screenY = (noseLandmark[1] / video.videoHeight) * window.innerHeight;
+            
             indicator.style.display = 'block';
-            indicator.style.left = noseLandmark[0] + 'px';
-            indicator.style.top = noseLandmark[1] + 'px';
+            indicator.style.left = screenX + 'px';
+            indicator.style.top = screenY + 'px';
             
-            // Show coordinates in the text indicator
-            textIndicator.innerHTML = `Face tracking: Active (Nose X: ${noseLandmark[0].toFixed(0)}, Y: ${noseLandmark[1].toFixed(0)})`;
-            
-            // Simulate mouse movement at the nose position
-            simulateMouseMove(noseLandmark[0], noseLandmark[1]);
-          } else {
-            textIndicator.innerHTML = 'Face tracking: No nose landmark found';
-            textIndicator.style.color = 'orange';
+            textIndicator.innerHTML = `Face tracking: Active (Nose X: ${screenX.toFixed(0)}, Y: ${screenY.toFixed(0)})`;
+            simulateMouseMove(screenX, screenY);
           }
         }
       } catch (error) {
@@ -189,7 +171,6 @@ function start() {
 }
 
 function main() {
-  console.log("Main function called");
   WebARRocksResizer.size_canvas({
     canvasId: 'WebARRocksFaceCanvas',
     callback: start
