@@ -1,4 +1,5 @@
 function initLive2D() {
+  // Initialize Live2D widget
   L2Dwidget.init({
     model: {
       jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
@@ -61,6 +62,18 @@ function createIndicator() {
   return { indicator, textIndicator };
 }
 
+// Function to dispatch a mousemove event
+function simulateMouseMove(x, y) {
+  const event = new MouseEvent('mousemove', {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+    clientX: x,
+    clientY: y
+  });
+  document.dispatchEvent(event);
+}
+
 function start() {
   const { indicator, textIndicator } = createIndicator();
   
@@ -95,40 +108,25 @@ function start() {
       if (detectState.landmarks && detectState.landmarks.length > 30) {
         const nose = detectState.landmarks[30];
         
-        // Calculate normalized position (-1 to 1)
-        const canvasWidth = document.getElementById('WebARRocksFaceCanvas').width;
-        const canvasHeight = document.getElementById('WebARRocksFaceCanvas').height;
-        
         // Update the visual indicator position
         indicator.style.display = 'block';
         indicator.style.left = nose[0] + 'px';
         indicator.style.top = nose[1] + 'px';
         
-        // Calculate normalized coordinates (-1 to 1)
-        // Note: X is flipped for mirroring
-        const noseX = -1 * (2 * (nose[0] / canvasWidth) - 1);
-        const noseY = 2 * (nose[1] / canvasHeight) - 1;
+        // Calculate normalized position (-1 to 1)
+        const canvasWidth = document.getElementById('WebARRocksFaceCanvas').width;
+        const canvasHeight = document.getElementById('WebARRocksFaceCanvas').height;
+        
+        // Calculate actual screen coordinates
+        const screenX = nose[0];
+        const screenY = nose[1];
         
         // Show coordinates in the text indicator
-        textIndicator.innerHTML = `Face tracking: Active (X: ${noseX.toFixed(2)}, Y: ${noseY.toFixed(2)})`;
+        textIndicator.innerHTML = `Face tracking: Active (X: ${screenX.toFixed(0)}, Y: ${screenY.toFixed(0)})`;
         
-        // Apply to Live2D model with appropriate scaling
-        const model = L2Dwidget.getModel();
-        if (model) {
-          try {
-            // Adjust the multiplier (30) to control sensitivity
-            model.setParamFloat('PARAM_ANGLE_X', noseX * 30);
-            model.setParamFloat('PARAM_ANGLE_Y', noseY * 30);
-            
-            // Optional: Add some eye tracking as well
-            model.setParamFloat('PARAM_EYE_BALL_X', noseX);
-            model.setParamFloat('PARAM_EYE_BALL_Y', noseY);
-          } catch (e) {
-            console.error('Error updating Live2D parameters:', e);
-            textIndicator.innerHTML = 'Error updating Live2D model';
-            textIndicator.style.color = 'red';
-          }
-        }
+        // Instead of directly modifying Live2D parameters, simulate mouse movement
+        // This works because Live2D widget responds to mouse movements by default
+        simulateMouseMove(screenX, screenY);
       }
     }
   });
