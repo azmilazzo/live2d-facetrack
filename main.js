@@ -1,4 +1,3 @@
-// Add these variables at the top
 let previousX = 0;
 let previousY = 0;
 
@@ -39,14 +38,19 @@ function initLive2D() {
 
 function initVideo() {
     const video = document.getElementById('video');
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then((stream) => {
-            video.srcObject = stream;
-            console.log("Video initialized successfully");
-        })
-        .catch((err) => {
-            console.error("Error accessing webcam: " + err);
-        });
+    navigator.mediaDevices.getUserMedia({ 
+        video: {
+            width: { ideal: window.innerWidth },
+            height: { ideal: window.innerHeight }
+        }
+    })
+    .then((stream) => {
+        video.srcObject = stream;
+        console.log("Video initialized successfully");
+    })
+    .catch((err) => {
+        console.error("Error accessing webcam: " + err);
+    });
 }
 
 function createIndicator() {
@@ -105,12 +109,18 @@ function start() {
         spec: {
             NNCPath: 'https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/neuralNets/NN_AUTOBONES_21.json',
             videoSettings: {
-                facingMode: 'user'
+                facingMode: 'user',
+                idealWidth: window.innerWidth,
+                idealHeight: window.innerHeight
             },
             stabilizationSettings: {
                 translationFactorRange: [0.002, 0.06],
                 rotationFactorRange: [0.015, 0.1]
             }
+        },
+        canvasSize: {
+            width: window.innerWidth,
+            height: window.innerHeight
         },
         callbackReady: function(err, spec) {
             if (err) {
@@ -196,7 +206,10 @@ function main() {
     console.log("Main function called");
     WebARRocksResizer.size_canvas({
         canvasId: 'WebARRocksFaceCanvas',
-        callback: start
+        callback: start,
+        overSamplingFactor: 1.0,
+        isFullScreen: true,
+        sizeMode: 'fullscreen'
     });
 }
 
