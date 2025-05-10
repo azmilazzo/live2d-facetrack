@@ -1,67 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Live2D Face Tracking Demo</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Live2D with Face Tracking</title>
+  <!-- WebAR.rocks.face CDN -->
+  <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/dist/WebARRocksFace.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceDebugHelper.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksResizer.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceExpressionsEvaluator.js"></script>
+  <!-- Live2D CDN -->
+  <script src="https://unpkg.com/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
   <style>
-    body { margin: 0; overflow: hidden; }
-    /* Position layers: Live2D widget behind video, debug canvas on top */
-    #live2d-widget {
-      position: absolute;
-      top: 0; left: 0;
-      z-index: 0;
-      opacity: 0;           /* hide the Live2D model */
-      pointer-events: none; /* do not block input */
+    body {
+      margin: 0;
+      background: #2a2a2a;
+      overflow: hidden;
     }
-    /* Face tracking canvas (webcam feed) */
-    #WebARRocksFaceCanvas {
+    canvas {
       position: absolute;
-      top: 0; left: 0;
-      z-index: 1;
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: cover;
     }
-    /* Debug overlay canvas (blue/red points) */
-    #debugCanvas {
+    #video {
       position: absolute;
-      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      transform: scaleX(-1);
       z-index: 2;
+    }
+    #live2d-widget {
+      z-index: 1 !important; /* Move Live2D behind webcam */
+      opacity: 0.2; /* Optional: make it semi-transparent for debugging */
+      pointer-events: none;
+    }
+    .tracking-element {
+      position: absolute;
+      z-index: 9999 !important;
       pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <!-- Live2D widget container (hidden behind) -->
-  <div id="live2d-widget"></div>
-  
-  <!-- Canvas used by WebAR.rocks for face tracking -->
-  <canvas id="WebARRocksFaceCanvas" width="640" height="480"></canvas>
-  
-  <!-- Overlay canvas for drawing debug points -->
-  <canvas id="debugCanvas" width="640" height="480"></canvas>
-
-  <!-- Include WebAR.rocks Face library -->
-  <script src="path/to/WebARRocksFace.js"></script>
-  <!-- Include Live2D widget library -->
-  <script src="path/to/l2dwidget.min.js"></script>
-
-  <!-- Initialize Live2D model (behind the scenes) -->
-  <script>
-    L2Dwidget.init({
-      model: {
-        jsonPath: 'path/to/model.json'
-      },
-      display: {
-        position: 'right',
-        width: 200,
-        height: 400
-      },
-      mobile: {
-        show: true,
-        scale: 0.5
-      }
-    });
-  </script>
-
-  <!-- Main tracking script -->
+  <canvas id="WebARRocksFaceCanvas"></canvas>
+  <video id="video" autoplay muted playsinline></video>
   <script src="main.js"></script>
 </body>
 </html>
