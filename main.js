@@ -1,3 +1,29 @@
+function initLive2D() {
+    L2Dwidget.init({
+        model: {
+            jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
+        },
+        display: {
+            position: 'center',
+            width: window.innerWidth,
+            height: window.innerHeight,
+            hOffset: 0,
+            vOffset: 0,
+            zIndex: 1  // Behind webcam feed
+        },
+        mobile: {
+            show: true,
+            scale: 1,
+            motion: true
+        },
+        react: {
+            opacityDefault: 1,
+            opacityOnHover: 1,
+            expression: 'null'
+        }
+    });
+}
+
 function initVideo() {
     const video = document.getElementById('video');
     navigator.mediaDevices.getUserMedia({ 
@@ -56,6 +82,17 @@ function createIndicator() {
     return { indicator, textIndicator, debugPoints };
 }
 
+function simulateMouseMove(x, y) {
+    const event = new MouseEvent('mousemove', {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+        clientX: x,
+        clientY: y
+    });
+    document.dispatchEvent(event);
+}
+
 function start() {
     const { indicator, textIndicator, debugPoints } = createIndicator();
 
@@ -88,6 +125,7 @@ function start() {
             console.log("WebAR.rocks.face is ready!");
             textIndicator.innerHTML = 'Face tracking: Ready (waiting for face)';
             textIndicator.style.color = 'yellow';
+            initLive2D();
             initVideo();
         },
         callbackTrack: function(detectState) {
@@ -117,6 +155,9 @@ function start() {
                         
                         // Update text display
                         textIndicator.innerHTML = `Face tracking: Active (Nose X: ${noseTip[0].toFixed(0)}, Y: ${noseTip[1].toFixed(0)})`;
+                        
+                        // Simulate mouse movement for Live2D
+                        simulateMouseMove(noseTip[0], noseTip[1]);
                     }
 
                     // Display all facial landmarks for debugging
@@ -145,7 +186,7 @@ function start() {
         }
     });
 
-    document.getElementById('WebARRocksFaceCanvas').style.zIndex = '2';
+    document.getElementById('WebARRocksFaceCanvas').style.zIndex = '3';
 }
 
 function main() {
