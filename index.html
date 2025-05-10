@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Live2D with Face Tracking</title>
-    <!-- Include necessary scripts -->
     <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/dist/WebARRocksFace.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceDebugHelper.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksResizer.js"></script>
@@ -28,6 +27,21 @@
             height: 100vh;
             object-fit: cover;
             transform: scaleX(-1);
+            z-index: 1;
+        }
+        #WebARRocksFaceCanvas {
+            z-index: 2;
+        }
+        #noseIndicator, #trackingStatus, #debugPoints {
+            z-index: 9999 !important;
+        }
+        #live2d-widget {
+            z-index: 3 !important;
+        }
+        .tracking-element {
+            position: absolute;
+            z-index: 9999 !important;
+            pointer-events: none;
         }
     </style>
 </head>
