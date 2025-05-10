@@ -1,84 +1,175 @@
-// main.js
+let previousX = window.innerWidth / 2;
+let previousY = window.innerHeight / 2;
 
-// Smoothing and amplification factors for nose
-const smoothingFactor = 0.2;
-const amplificationFactor = 1.0;
+function smoothMovement(currentX, currentY) {
+  const smoothingFactor = 0.2;
+  const screenCenterX = window.innerWidth / 2;
+  const screenCenterY = window.innerHeight / 2;
 
-// Variables to hold smoothed nose position
-let prevNoseX = null;
-let prevNoseY = null;
+  const newX = previousX + (currentX - previousX) * smoothingFactor;
+  const newY = previousY + (currentY - previousY) * smoothingFactor;
 
-// Get the debug canvas 2D context
-const debugCanvas = document.getElementById('debugCanvas');
-const debugCtx = debugCanvas.getContext('2d');
+  previousX = newX;
+  previousY = newY;
 
-// Initialize WebAR.rocks face tracker
-WEBARROCKSFACE.init({
-  canvasId: 'WebARRocksFaceCanvas',
-  NNCPath: 'neuralNets/NN_FACE_0.json', // path to the face model JSON
-  // Called when the tracker is ready
-  callbackReady: function(errCode, spec) {
-    if (errCode) {
-      console.error('WebAR.rocks initialization error:', errCode);
-      return;
+  return [newX, newY];
+}
+
+function initLive2D() {
+  L2Dwidget.init({
+    model: {
+      jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
+    },
+    display: {
+      position: 'center',
+      width: window.innerWidth,
+      height: window.innerHeight,
+      hOffset: 0,
+      vOffset: 0,
+      zIndex: 1
+    },
+    mobile: {
+      show: true,
+      scale: 1,
+      motion: true
+    },
+    react: {
+      opacityDefault: 1,
+      opacityOnHover: 1,
+      expression: 'null'
     }
-    // Set debug canvas to same size as WebAR canvas
-    debugCanvas.width = spec.canvasElement.width;
-    debugCanvas.height = spec.canvasElement.height;
-    console.log('WebAR.rocks face tracker is ready.');
-  },
-  // Called on each render frame with face detection data
-  callbackTrack: function(detectState) {
-    // If multiple faces tracked, take the first one
-    if (Array.isArray(detectState)) {
-      detectState = detectState[0];
+  });
+}
+
+function createIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'noseIndicator';
+  indicator.className = 'tracking-element';
+  indicator.style.width = '20px';
+  indicator.style.height = '20px';
+  indicator.style.backgroundColor = 'red';
+  indicator.style.borderRadius = '50%';
+  indicator.style.transform = 'translate(-50%, -50%)';
+  indicator.style.left = (window.innerWidth / 2) + 'px';
+  indicator.style.top = (window.innerHeight / 2) + 'px';
+  document.body.appendChild(indicator);
+
+  const textIndicator = document.createElement('div');
+  textIndicator.id = 'trackingStatus';
+  textIndicator.className = 'tracking-element';
+  textIndicator.style.top = '10px';
+  textIndicator.style.left = '10px';
+  textIndicator.style.color = 'white';
+  textIndicator.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  textIndicator.style.padding = '5px';
+  textIndicator.innerHTML = 'Face tracking: Waiting...';
+  document.body.appendChild(textIndicator);
+
+  const debugPoints = document.createElement('div');
+  debugPoints.id = 'debugPoints';
+  debugPoints.className = 'tracking-element';
+  document.body.appendChild(debugPoints);
+
+  return { indicator, textIndicator, debugPoints };
+}
+
+function simulateMouseMove(x, y) {
+  const [smoothX, smoothY] = smoothMovement(x, y);
+  const event = new MouseEvent('mousemove', {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+    clientX: smoothX,
+    clientY: smoothY
+  });
+  document.dispatchEvent(event);
+}
+
+function start() {
+  const { indicator, textIndicator, debugPoints } = createIndicator();
+
+  WebARRocksFaceDebugHelper.init({
+    spec: {
+      NNCPath: 'https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/neuralNets/NN_AUTOBONES_21.json',
+      videoSettings: {
+        facingMode: 'user',
+        idealWidth: window.innerWidth,
+        idealHeight: window.innerHeight
+      },
+      stabilizationSettings: {
+        translationFactorRange: [0.002, 0.06],
+        rotationFactorRange: [0.015, 0.1]
+      }
+    },
+    canvasSize: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    },
+    callbackReady: function(err) {
+      if (err) {
+        textIndicator.innerHTML = 'Face tracking: Error initializing';
+        textIndicator.style.color = 'red';
+        return;
+      }
+      textIndicator.innerHTML = 'Face tracking: Ready';
+      textIndicator.style.color = 'yellow';
+      initLive2D();
+    },
+    callbackTrack: function(detectState) {
+      if (!detectState.detected) {
+        textIndicator.innerHTML = 'Face tracking: No face';
+        textIndicator.style.color = 'orange';
+        indicator.style.display = 'none';
+        debugPoints.innerHTML = '';
+        return;
+      }
+
+      textIndicator.innerHTML = 'Face tracking: Active';
+      textIndicator.style.color = 'lime';
+
+      const landmarks = detectState.landmarks;
+      if (landmarks) {
+        debugPoints.innerHTML = '';
+        let nose = null;
+
+        for (let i = 27; i <= 33; i++) {
+          const [x, y] = landmarks[i];
+          const dot = document.createElement('div');
+          dot.className = 'tracking-element';
+          dot.style.width = '5px';
+          dot.style.height = '5px';
+          dot.style.borderRadius = '50%';
+          dot.style.position = 'absolute';
+          dot.style.left = `${x}px`;
+          dot.style.top = `${y}px`;
+          dot.style.transform = 'translate(-50%, -50%)';
+          dot.style.backgroundColor = (i === 30 ? 'blue' : 'green');
+          debugPoints.appendChild(dot);
+
+          if (i === 30) nose = [x, y];
+        }
+
+        if (nose) {
+          const [smoothX, smoothY] = smoothMovement(nose[0], nose[1]);
+          indicator.style.display = 'block';
+          indicator.style.left = smoothX + 'px';
+          indicator.style.top = smoothY + 'px';
+          textIndicator.innerHTML = `Tracking: Nose X=${smoothX.toFixed(0)} Y=${smoothY.toFixed(0)}`;
+          simulateMouseMove(smoothX, smoothY);
+        }
+      }
     }
-    if (!detectState || !detectState.detected) {
-      // No face detected: clear debug overlay
-      debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-      return;
-    }
+  });
+}
 
-    // Get landmarks array (list of [x,y] in viewport coords -1..+1)
-    const landmarks = detectState.landmarks;
+function main() {
+  WebARRocksResizer.size_canvas({
+    canvasId: 'WebARRocksFaceCanvas',
+    callback: start,
+    overSamplingFactor: 1.0,
+    isFullScreen: true,
+    sizeMode: 'fullscreen'
+  });
+}
 
-    // Clear previous debug drawings
-    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-
-    // Draw blue debug points for landmarks 27 through 33 (except nose tip in red later)
-    for (let i = 27; i <= 33; i++) {
-      if (i === 30) continue; // skip nose tip here
-      const norm = landmarks[i];
-      // Convert from normalized coords to pixel coords
-      const px = (norm[0] + 1) * 0.5 * debugCanvas.width;
-      const py = (1 - norm[1]) * 0.5 * debugCanvas.height;
-      // Draw blue circle
-      debugCtx.fillStyle = 'blue';
-      debugCtx.beginPath();
-      debugCtx.arc(px, py, 4, 0, 2 * Math.PI);
-      debugCtx.fill();
-    }
-
-    // Handle the nose tip (landmark 30) with smoothing
-    const noseNorm = landmarks[30];
-    const rawX = (noseNorm[0] + 1) * 0.5 * debugCanvas.width;
-    const rawY = (1 - noseNorm[1]) * 0.5 * debugCanvas.height;
-
-    // Initialize previous nose position if null
-    if (prevNoseX === null || prevNoseY === null) {
-      prevNoseX = rawX;
-      prevNoseY = rawY;
-    }
-    // Smooth the nose movement
-    const smoothedX = prevNoseX + (rawX - prevNoseX) * smoothingFactor * amplificationFactor;
-    const smoothedY = prevNoseY + (rawY - prevNoseY) * smoothingFactor * amplificationFactor;
-    prevNoseX = smoothedX;
-    prevNoseY = smoothedY;
-
-    // Draw red circle at smoothed nose position
-    debugCtx.fillStyle = 'red';
-    debugCtx.beginPath();
-    debugCtx.arc(smoothedX, smoothedY, 6, 0, 2 * Math.PI);
-    debugCtx.fill();
-  }
-});
+window.addEventListener('load', main);
