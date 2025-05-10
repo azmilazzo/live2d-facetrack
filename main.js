@@ -9,7 +9,7 @@ function initLive2D() {
             height: window.innerHeight,
             hOffset: 0,
             vOffset: 0,
-            zIndex: 1  // Behind webcam feed
+            zIndex: 1
         },
         mobile: {
             show: true,
@@ -21,23 +21,6 @@ function initLive2D() {
             opacityOnHover: 1,
             expression: 'null'
         }
-    });
-}
-
-function initVideo() {
-    const video = document.getElementById('video');
-    navigator.mediaDevices.getUserMedia({ 
-        video: {
-            width: { ideal: window.innerWidth },
-            height: { ideal: window.innerHeight }
-        }
-    })
-    .then((stream) => {
-        video.srcObject = stream;
-        console.log("Video initialized successfully");
-    })
-    .catch((err) => {
-        console.error("Error accessing webcam: " + err);
     });
 }
 
@@ -126,7 +109,6 @@ function start() {
             textIndicator.innerHTML = 'Face tracking: Ready (waiting for face)';
             textIndicator.style.color = 'yellow';
             initLive2D();
-            initVideo();
         },
         callbackTrack: function(detectState) {
             try {
