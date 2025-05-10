@@ -4,16 +4,15 @@ function initLive2D() {
       jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
     },
     display: {
-      position: 'center',
-      width: window.innerWidth,
-      height: window.innerHeight,
+      position: 'right',
+      width: 300,
+      height: 500,
       hOffset: 0,
       vOffset: 0,
     },
     mobile: {
       show: true,
-      scale: 1,
-      motion: true
+      scale: 0.8,
     },
     react: {
       opacityDefault: 1,
@@ -22,125 +21,83 @@ function initLive2D() {
   });
 }
 
-function initVideo() {
-  const video = document.getElementById('video');
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then((stream) => {
-      video.srcObject = stream;
-    })
-    .catch((err) => {
-      console.error("Error accessing webcam: " + err);
-    });
-}
-
-// Create a visual indicator
-function createIndicator() {
-  // Create a red dot to show nose position
-  const indicator = document.createElement('div');
-  indicator.id = 'noseIndicator';
-  indicator.style.position = 'absolute';
-  indicator.style.width = '20px';
-  indicator.style.height = '20px';
-  indicator.style.backgroundColor = 'red';
-  indicator.style.borderRadius = '50%';
-  indicator.style.zIndex = '1000';
-  indicator.style.pointerEvents = 'none';
-  indicator.style.transform = 'translate(-50%, -50%)';
-  document.body.appendChild(indicator);
-  
-  // Create status text
-  const textIndicator = document.createElement('div');
-  textIndicator.id = 'trackingStatus';
-  textIndicator.style.position = 'absolute';
-  textIndicator.style.top = '10px';
-  textIndicator.style.left = '10px';
-  textIndicator.style.color = 'white';
-  textIndicator.style.fontFamily = 'Arial, sans-serif';
-  textIndicator.style.zIndex = '1000';
-  textIndicator.style.backgroundColor = 'rgba(0,0,0,0.5)';
-  textIndicator.style.padding = '5px';
-  textIndicator.innerHTML = 'Face tracking: Waiting...';
-  document.body.appendChild(textIndicator);
-  
-  return { indicator, textIndicator };
-}
-
-// Function to dispatch a mousemove event
-function simulateMouseMove(x, y) {
-  const event = new MouseEvent('mousemove', {
-    view: window,
-    bubbles: true,
-    cancelable: true,
-    clientX: x,
-    clientY: y
-  });
-  document.dispatchEvent(event);
-}
-
 function start() {
-  const { indicator, textIndicator } = createIndicator();
-  
-  // Initialize WebAR face tracking
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('WebARRocksFaceCanvas');
+  const ctx = canvas.getContext('2d');
+
   WebARRocksFace.init({
-    canvasId: 'WebARRocksFaceCanvas',
-    NNCPath: 'https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/neuralNets/NN_AUTOBONES_21.json',
-    callbackReady: function(err, spec) {
+    canvas: canvas,
+    NNCPath: 'https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/neuralNets/NN_DEFAULT.json',
+    callbackReady: function(err) {
       if (err) {
-        console.error('Face tracking initialization error:', err);
-        textIndicator.innerHTML = 'Face tracking: Error initializing';
-        textIndicator.style.color = 'red';
+        console.error('Error initializing face tracking:', err);
         return;
       }
-      
-      console.log('Face tracking is ready!');
-      textIndicator.innerHTML = 'Face tracking: Ready (waiting for face)';
-      textIndicator.style.color = 'yellow';
-      
-      // Initialize Live2D and webcam
+      console.log('Face tracking initialized');
       initLive2D();
-      initVideo();
+
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+          video.srcObject = stream;
+          video.play();
+        })
+        .catch(function(err) {
+          console.error('Error accessing webcam:', err);
+        });
     },
     callbackTrack: function(detectState) {
-      try {
-        // Check if a face is detected
-        if (!detectState.detected) {
-          textIndicator.innerHTML = 'Face tracking: No face detected';
-          textIndicator.style.color = 'orange';
-          indicator.style.display = 'none';
-          return;
-        }
-        
-        // If we have landmarks and there are enough of them
-        if (detectState.landmarks && detectState.landmarks.length > 30) {
-          // Get nose position (usually landmark 30)
-          const nose = detectState.landmarks[30];
-          
-          // Update the indicator position
-          indicator.style.display = 'block';
-          indicator.style.left = nose[0] + 'px';
-          indicator.style.top = nose[1] + 'px';
-          
-          // Update status text
-          textIndicator.innerHTML = `Face tracking: Active (X: ${nose[0].toFixed(0)}, Y: ${nose[1].toFixed(0)})`;
-          textIndicator.style.color = 'lime';
-          
-          // Move mouse to nose position
-          simulateMouseMove(nose[0], nose[1]);
-        }
-      } catch (error) {
-        console.error('Error in tracking callback:', error);
-        textIndicator.innerHTML = `Error: ${error.message}`;
-        textIndicator.style.color = 'red';
+      if (detectState.detected > 0.8) {  // Increased detection threshold
+        const faceCenterX = detectState.landmarks[30][0];
+        const faceCenterY = detectState.landmarks[30][1];
+
+        // Normalize coordinates to viewport
+        const normalizedX = (faceCenterX / canvas.width) * window.innerWidth;
+        const normalizedY = (faceCenterY / canvas.height) * window.innerHeight;
+
+        // Add smoothing
+        const smoothingFactor = 0.3;
+        let currentX = normalizedX;
+        let currentY = normalizedY;
+
+        currentX = currentX * smoothingFactor + normalizedX * (1 - smoothingFactor);
+        currentY = currentY * smoothingFactor + normalizedY * (1 - smoothingFactor);
+
+        // Simulate mouse movement
+        const mouseEvent = new MouseEvent('mousemove', {
+          clientX: currentX,
+          clientY: currentY,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        document.dispatchEvent(mouseEvent);
+
+        // Visual feedback (optional)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
+        ctx.beginPath();
+        ctx.arc(faceCenterX, faceCenterY, 5, 0, 2 * Math.PI);
+        ctx.fill();
       }
     }
   });
 }
 
-function main() {
+// Initialize on page load
+window.addEventListener('load', function() {
   WebARRocksResizer.size_canvas({
     canvasId: 'WebARRocksFaceCanvas',
     callback: start
   });
-}
+});
 
-window.addEventListener('load', main);
+// Handle window resize
+window.addEventListener('resize', function() {
+  WebARRocksResizer.size_canvas({
+    canvasId: 'WebARRocksFaceCanvas',
+    callback: function() {
+      console.log('Canvas resized');
+    }
+  });
+});
