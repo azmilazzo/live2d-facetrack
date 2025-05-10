@@ -11,12 +11,23 @@
     <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceExpressionsEvaluator.js"></script>
     <script src="https://unpkg.com/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
     <style>
-        body { margin: 0; background: 
-#2a2a2a; overflow: hidden; }
-        canvas { position: absolute; }
+        body { 
+            margin: 0; 
+            background: #2a2a2a; 
+            overflow: hidden; 
+        }
+        canvas { 
+            position: absolute;
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover;
+        }
         #video {
-          display: none; /* Hide the video as it's used for tracking /
-          transform: scaleX(-1); / Mirror the video */
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            transform: scaleX(-1);
         }
     </style>
 </head>
