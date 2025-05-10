@@ -1,10 +1,18 @@
-let previousX = 0;
-let previousY = 0;
+let previousX = window.innerWidth / 2;
+let previousY = window.innerHeight / 2;
 
 function smoothMovement(currentX, currentY) {
     const smoothingFactor = 0.3;
-    const newX = previousX + (currentX - previousX) * smoothingFactor;
-    const newY = previousY + (currentY - previousY) * smoothingFactor;
+    const amplificationFactor = 5.0;
+    
+    const screenCenterX = window.innerWidth / 2;
+    const screenCenterY = window.innerHeight / 2;
+    
+    const amplifiedX = screenCenterX + (currentX - screenCenterX) * amplificationFactor;
+    const amplifiedY = screenCenterY + (currentY - screenCenterY) * amplificationFactor;
+    
+    const newX = previousX + (amplifiedX - previousX) * smoothingFactor;
+    const newY = previousY + (amplifiedY - previousY) * smoothingFactor;
     
     previousX = newX;
     previousY = newY;
@@ -63,6 +71,8 @@ function createIndicator() {
     indicator.style.backgroundColor = 'red';
     indicator.style.borderRadius = '50%';
     indicator.style.transform = 'translate(-50%, -50%)';
+    indicator.style.left = (window.innerWidth / 2) + 'px';
+    indicator.style.top = (window.innerHeight / 2) + 'px';
     document.body.appendChild(indicator);
 
     const textIndicator = document.createElement('div');
@@ -86,8 +96,7 @@ function createIndicator() {
 }
 
 function simulateMouseMove(x, y) {
-    const scaleFactor = 2.0;
-    const [smoothX, smoothY] = smoothMovement(x * scaleFactor, y * scaleFactor);
+    const [smoothX, smoothY] = smoothMovement(x, y);
     
     const event = new MouseEvent('mousemove', {
         view: window,
@@ -162,7 +171,7 @@ function start() {
                             debugPoint.className = 'tracking-element';
                             debugPoint.style.width = '5px';
                             debugPoint.style.height = '5px';
-                            debugPoint.style.backgroundColor = (i === 30) ? 'green' : 'blue';
+                            debugPoint.style.backgroundColor = (i === 30) ? 'blue' : 'green';
                             debugPoint.style.borderRadius = '50%';
                             debugPoint.style.left = point[0] + 'px';
                             debugPoint.style.top = point[1] + 'px';
