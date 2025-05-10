@@ -1,51 +1,3 @@
-let previousX = window.innerWidth / 2;
-let previousY = window.innerHeight / 2;
-
-function smoothMovement(currentX, currentY) {
-    const smoothingFactor = 0.3;
-    const amplificationFactor = 5.0;
-    
-    const screenCenterX = window.innerWidth / 2;
-    const screenCenterY = window.innerHeight / 2;
-    
-    const amplifiedX = screenCenterX + (currentX - screenCenterX) * amplificationFactor;
-    const amplifiedY = screenCenterY + (currentY - screenCenterY) * amplificationFactor;
-    
-    const newX = previousX + (amplifiedX - previousX) * smoothingFactor;
-    const newY = previousY + (amplifiedY - previousY) * smoothingFactor;
-    
-    previousX = newX;
-    previousY = newY;
-    
-    return [newX, newY];
-}
-
-function initLive2D() {
-    L2Dwidget.init({
-        model: {
-            jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
-        },
-        display: {
-            position: 'center',
-            width: window.innerWidth,
-            height: window.innerHeight,
-            hOffset: 0,
-            vOffset: 0,
-            zIndex: 3
-        },
-        mobile: {
-            show: true,
-            scale: 1,
-            motion: true
-        },
-        react: {
-            opacityDefault: 1,
-            opacityOnHover: 1,
-            expression: 'null'
-        }
-    });
-}
-
 function initVideo() {
     const video = document.getElementById('video');
     navigator.mediaDevices.getUserMedia({ 
@@ -73,8 +25,6 @@ function createIndicator() {
     indicator.style.backgroundColor = 'red';
     indicator.style.borderRadius = '50%';
     indicator.style.transform = 'translate(-50%, -50%)';
-    indicator.style.left = (window.innerWidth / 2) + 'px';
-    indicator.style.top = (window.innerHeight / 2) + 'px';
     indicator.style.display = 'block';
     indicator.style.zIndex = '9999';
     indicator.style.pointerEvents = 'none';
@@ -104,19 +54,6 @@ function createIndicator() {
     document.body.appendChild(debugPoints);
 
     return { indicator, textIndicator, debugPoints };
-}
-
-function simulateMouseMove(x, y) {
-    const [smoothX, smoothY] = smoothMovement(x, y);
-    
-    const event = new MouseEvent('mousemove', {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-        clientX: smoothX,
-        clientY: smoothY
-    });
-    document.dispatchEvent(event);
 }
 
 function start() {
@@ -151,7 +88,6 @@ function start() {
             console.log("WebAR.rocks.face is ready!");
             textIndicator.innerHTML = 'Face tracking: Ready (waiting for face)';
             textIndicator.style.color = 'yellow';
-            initLive2D();
             initVideo();
         },
         callbackTrack: function(detectState) {
@@ -170,47 +106,36 @@ function start() {
                 if (detectState.landmarks) {
                     debugPoints.innerHTML = '';
 
-                    let noseLandmark = null;
-
-                    for (let i = 27; i <= 33; i++) {
-                        if (i < detectState.landmarks.length) {
-                            const point = detectState.landmarks[i];
-
-                            const debugPoint = document.createElement('div');
-                            debugPoint.className = 'tracking-element';
-                            debugPoint.style.position = 'absolute';
-                            debugPoint.style.width = '5px';
-                            debugPoint.style.height = '5px';
-                            debugPoint.style.backgroundColor = (i === 30) ? 'blue' : 'green';
-                            debugPoint.style.borderRadius = '50%';
-                            debugPoint.style.left = point[0] + 'px';
-                            debugPoint.style.top = point[1] + 'px';
-                            debugPoint.style.transform = 'translate(-50%, -50%)';
-                            debugPoint.style.zIndex = '9999';
-                            debugPoint.style.pointerEvents = 'none';
-                            debugPoint.title = `Landmark ${i}`;
-                            debugPoints.appendChild(debugPoint);
-
-                            if (i === 30) {
-                                noseLandmark = point;
-                            }
-                        }
-                    }
-
-                    if (noseLandmark) {
-                        const [smoothX, smoothY] = smoothMovement(noseLandmark[0], noseLandmark[1]);
-                        
+                    // The nose tip point is typically landmark 30
+                    const noseTip = detectState.landmarks[30];
+                    
+                    if (noseTip) {
+                        // Update red indicator position to nose tip
                         indicator.style.display = 'block';
-                        indicator.style.left = smoothX + 'px';
-                        indicator.style.top = smoothY + 'px';
-
-                        textIndicator.innerHTML = `Face tracking: Active (Nose X: ${smoothX.toFixed(0)}, Y: ${smoothY.toFixed(0)})`;
-
-                        simulateMouseMove(smoothX, smoothY);
-                    } else {
-                        textIndicator.innerHTML = 'Face tracking: No nose landmark found';
-                        textIndicator.style.color = 'orange';
+                        indicator.style.left = noseTip[0] + 'px';
+                        indicator.style.top = noseTip[1] + 'px';
+                        
+                        // Update text display
+                        textIndicator.innerHTML = `Face tracking: Active (Nose X: ${noseTip[0].toFixed(0)}, Y: ${noseTip[1].toFixed(0)})`;
                     }
+
+                    // Display all facial landmarks for debugging
+                    detectState.landmarks.forEach((point, i) => {
+                        const debugPoint = document.createElement('div');
+                        debugPoint.className = 'tracking-element';
+                        debugPoint.style.position = 'absolute';
+                        debugPoint.style.width = '5px';
+                        debugPoint.style.height = '5px';
+                        debugPoint.style.backgroundColor = (i === 30) ? 'blue' : 'green';
+                        debugPoint.style.borderRadius = '50%';
+                        debugPoint.style.left = point[0] + 'px';
+                        debugPoint.style.top = point[1] + 'px';
+                        debugPoint.style.transform = 'translate(-50%, -50%)';
+                        debugPoint.style.zIndex = '9999';
+                        debugPoint.style.pointerEvents = 'none';
+                        debugPoint.title = `Landmark ${i}`;
+                        debugPoints.appendChild(debugPoint);
+                    });
                 }
             } catch (error) {
                 console.error("Error in tracking callback:", error);
