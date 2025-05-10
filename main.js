@@ -40,7 +40,8 @@ function initLive2D() {
         },
         react: {
             opacityDefault: 1,
-            opacityOnHover: 1
+            opacityOnHover: 1,
+            expression: 'null'
         }
     });
 }
@@ -66,6 +67,7 @@ function createIndicator() {
     const indicator = document.createElement('div');
     indicator.id = 'noseIndicator';
     indicator.className = 'tracking-element';
+    indicator.style.position = 'absolute';
     indicator.style.width = '20px';
     indicator.style.height = '20px';
     indicator.style.backgroundColor = 'red';
@@ -73,23 +75,32 @@ function createIndicator() {
     indicator.style.transform = 'translate(-50%, -50%)';
     indicator.style.left = (window.innerWidth / 2) + 'px';
     indicator.style.top = (window.innerHeight / 2) + 'px';
+    indicator.style.display = 'block';
+    indicator.style.zIndex = '9999';
+    indicator.style.pointerEvents = 'none';
     document.body.appendChild(indicator);
 
     const textIndicator = document.createElement('div');
     textIndicator.id = 'trackingStatus';
     textIndicator.className = 'tracking-element';
+    textIndicator.style.position = 'absolute';
     textIndicator.style.top = '10px';
     textIndicator.style.left = '10px';
     textIndicator.style.color = 'white';
     textIndicator.style.fontFamily = 'Arial, sans-serif';
     textIndicator.style.backgroundColor = 'rgba(0,0,0,0.5)';
     textIndicator.style.padding = '5px';
+    textIndicator.style.zIndex = '9999';
+    textIndicator.style.pointerEvents = 'none';
     textIndicator.innerHTML = 'Face tracking: Waiting...';
     document.body.appendChild(textIndicator);
 
     const debugPoints = document.createElement('div');
     debugPoints.id = 'debugPoints';
     debugPoints.className = 'tracking-element';
+    debugPoints.style.position = 'absolute';
+    debugPoints.style.zIndex = '9999';
+    debugPoints.style.pointerEvents = 'none';
     document.body.appendChild(debugPoints);
 
     return { indicator, textIndicator, debugPoints };
@@ -159,8 +170,6 @@ function start() {
                 if (detectState.landmarks) {
                     debugPoints.innerHTML = '';
 
-                    console.log("Number of landmarks:", detectState.landmarks.length);
-
                     let noseLandmark = null;
 
                     for (let i = 27; i <= 33; i++) {
@@ -169,6 +178,7 @@ function start() {
 
                             const debugPoint = document.createElement('div');
                             debugPoint.className = 'tracking-element';
+                            debugPoint.style.position = 'absolute';
                             debugPoint.style.width = '5px';
                             debugPoint.style.height = '5px';
                             debugPoint.style.backgroundColor = (i === 30) ? 'blue' : 'green';
@@ -176,6 +186,8 @@ function start() {
                             debugPoint.style.left = point[0] + 'px';
                             debugPoint.style.top = point[1] + 'px';
                             debugPoint.style.transform = 'translate(-50%, -50%)';
+                            debugPoint.style.zIndex = '9999';
+                            debugPoint.style.pointerEvents = 'none';
                             debugPoint.title = `Landmark ${i}`;
                             debugPoints.appendChild(debugPoint);
 
@@ -209,13 +221,6 @@ function start() {
     });
 
     document.getElementById('WebARRocksFaceCanvas').style.zIndex = '2';
-    
-    setInterval(() => {
-        const trackingElements = document.getElementsByClassName('tracking-element');
-        for(let element of trackingElements) {
-            element.style.zIndex = '9999';
-        }
-    }, 1000);
 }
 
 function main() {
