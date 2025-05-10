@@ -3,8 +3,10 @@ let previousY = window.innerHeight / 2;
 
 function smoothMovement(currentX, currentY) {
   const smoothingFactor = 0.2;
-  const screenCenterX = window.innerWidth / 2;
-  const screenCenterY = window.innerHeight / 2;
+
+  if (!isFinite(currentX) || !isFinite(currentY)) {
+    return [previousX, previousY]; // fallback to last known good values
+  }
 
   const newX = previousX + (currentX - previousX) * smoothingFactor;
   const newY = previousY + (currentY - previousY) * smoothingFactor;
@@ -74,7 +76,10 @@ function createIndicator() {
 }
 
 function simulateMouseMove(x, y) {
+  if (!isFinite(x) || !isFinite(y)) return;
+
   const [smoothX, smoothY] = smoothMovement(x, y);
+
   const event = new MouseEvent('mousemove', {
     view: window,
     bubbles: true,
@@ -124,39 +129,42 @@ function start() {
         return;
       }
 
+      const landmarks = detectState.landmarks;
+      if (!landmarks || !Array.isArray(landmarks) || !landmarks[30]) {
+        return;
+      }
+
       textIndicator.innerHTML = 'Face tracking: Active';
       textIndicator.style.color = 'lime';
 
-      const landmarks = detectState.landmarks;
-      if (landmarks) {
-        debugPoints.innerHTML = '';
-        let nose = null;
+      debugPoints.innerHTML = '';
+      let nose = landmarks[30];
 
-        for (let i = 27; i <= 33; i++) {
-          const [x, y] = landmarks[i];
-          const dot = document.createElement('div');
-          dot.className = 'tracking-element';
-          dot.style.width = '5px';
-          dot.style.height = '5px';
-          dot.style.borderRadius = '50%';
-          dot.style.position = 'absolute';
-          dot.style.left = `${x}px`;
-          dot.style.top = `${y}px`;
-          dot.style.transform = 'translate(-50%, -50%)';
-          dot.style.backgroundColor = (i === 30 ? 'blue' : 'green');
-          debugPoints.appendChild(dot);
+      for (let i = 27; i <= 33; i++) {
+        const point = landmarks[i];
+        if (!point || point.length !== 2 || !isFinite(point[0]) || !isFinite(point[1])) continue;
 
-          if (i === 30) nose = [x, y];
-        }
+        const [x, y] = point;
+        const dot = document.createElement('div');
+        dot.className = 'tracking-element';
+        dot.style.width = '5px';
+        dot.style.height = '5px';
+        dot.style.borderRadius = '50%';
+        dot.style.position = 'absolute';
+        dot.style.left = `${x}px`;
+        dot.style.top = `${y}px`;
+        dot.style.transform = 'translate(-50%, -50%)';
+        dot.style.backgroundColor = (i === 30 ? 'blue' : 'green');
+        debugPoints.appendChild(dot);
+      }
 
-        if (nose) {
-          const [smoothX, smoothY] = smoothMovement(nose[0], nose[1]);
-          indicator.style.display = 'block';
-          indicator.style.left = smoothX + 'px';
-          indicator.style.top = smoothY + 'px';
-          textIndicator.innerHTML = `Tracking: Nose X=${smoothX.toFixed(0)} Y=${smoothY.toFixed(0)}`;
-          simulateMouseMove(smoothX, smoothY);
-        }
+      if (nose && nose.length === 2 && isFinite(nose[0]) && isFinite(nose[1])) {
+        const [smoothX, smoothY] = smoothMovement(nose[0], nose[1]);
+        indicator.style.display = 'block';
+        indicator.style.left = `${smoothX}px`;
+        indicator.style.top = `${smoothY}px`;
+        textIndicator.innerHTML = `Tracking: Nose X=${smoothX.toFixed(0)} Y=${smoothY.toFixed(0)}`;
+        simulateMouseMove(smoothX, smoothY);
       }
     }
   });
