@@ -4,44 +4,19 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Live2D with Face Tracking</title>
-    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/dist/WebARRocksFace.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceDebugHelper.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksResizer.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face@latest/helpers/WebARRocksFaceExpressionsEvaluator.js"></script>
-    <script src="https://unpkg.com/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
+
+    <!-- Include necessary scripts -->
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face @latest/dist/WebARRocksFace.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face @latest/helpers/WebARRocksFaceDebugHelper.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face @latest/helpers/WebARRocksResizer.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/WebAR-rocks/WebAR.rocks.face @latest/helpers/WebARRocksFaceExpressionsEvaluator.js"></script>
+    <script src="https://unpkg.com/live2d-widget @3.1.4/lib/L2Dwidget.min.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            background: #2a2a2a; 
-            overflow: hidden; 
-        }
-        canvas { 
-            position: absolute;
-            width: 100vw !important;
-            height: 100vh !important;
-            object-fit: cover;
-        }
+        body { margin: 0; background: #2a2a2a; overflow: hidden; }
+        canvas { position: absolute; }
         #video {
-            position: absolute;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            transform: scaleX(-1);
-            z-index: 1;
-        }
-        #WebARRocksFaceCanvas {
-            z-index: 2;
-        }
-        #noseIndicator, #trackingStatus, #debugPoints {
-            z-index: 9999 !important;
-        }
-        #live2d-widget {
-            z-index: 3 !important;
-        }
-        .tracking-element {
-            position: absolute;
-            z-index: 9999 !important;
-            pointer-events: none;
+          display: none; /* Hide the video as it's used for tracking */
+          transform: scaleX(-1); /* Mirror the video */
         }
     </style>
 </head>
