@@ -23,6 +23,7 @@ function initLive2D() {
             height: window.innerHeight,
             hOffset: 0,
             vOffset: 0,
+            zIndex: 3
         },
         mobile: {
             show: true,
@@ -56,24 +57,21 @@ function initVideo() {
 function createIndicator() {
     const indicator = document.createElement('div');
     indicator.id = 'noseIndicator';
-    indicator.style.position = 'absolute';
+    indicator.className = 'tracking-element';
     indicator.style.width = '20px';
     indicator.style.height = '20px';
     indicator.style.backgroundColor = 'red';
     indicator.style.borderRadius = '50%';
-    indicator.style.zIndex = '1000';
-    indicator.style.pointerEvents = 'none';
     indicator.style.transform = 'translate(-50%, -50%)';
     document.body.appendChild(indicator);
 
     const textIndicator = document.createElement('div');
     textIndicator.id = 'trackingStatus';
-    textIndicator.style.position = 'absolute';
+    textIndicator.className = 'tracking-element';
     textIndicator.style.top = '10px';
     textIndicator.style.left = '10px';
     textIndicator.style.color = 'white';
     textIndicator.style.fontFamily = 'Arial, sans-serif';
-    textIndicator.style.zIndex = '1000';
     textIndicator.style.backgroundColor = 'rgba(0,0,0,0.5)';
     textIndicator.style.padding = '5px';
     textIndicator.innerHTML = 'Face tracking: Waiting...';
@@ -81,6 +79,7 @@ function createIndicator() {
 
     const debugPoints = document.createElement('div');
     debugPoints.id = 'debugPoints';
+    debugPoints.className = 'tracking-element';
     document.body.appendChild(debugPoints);
 
     return { indicator, textIndicator, debugPoints };
@@ -160,12 +159,11 @@ function start() {
                             const point = detectState.landmarks[i];
 
                             const debugPoint = document.createElement('div');
-                            debugPoint.style.position = 'absolute';
+                            debugPoint.className = 'tracking-element';
                             debugPoint.style.width = '5px';
                             debugPoint.style.height = '5px';
                             debugPoint.style.backgroundColor = (i === 30) ? 'green' : 'blue';
                             debugPoint.style.borderRadius = '50%';
-                            debugPoint.style.zIndex = '999';
                             debugPoint.style.left = point[0] + 'px';
                             debugPoint.style.top = point[1] + 'px';
                             debugPoint.style.transform = 'translate(-50%, -50%)';
@@ -200,6 +198,15 @@ function start() {
             }
         }
     });
+
+    document.getElementById('WebARRocksFaceCanvas').style.zIndex = '2';
+    
+    setInterval(() => {
+        const trackingElements = document.getElementsByClassName('tracking-element');
+        for(let element of trackingElements) {
+            element.style.zIndex = '9999';
+        }
+    }, 1000);
 }
 
 function main() {
